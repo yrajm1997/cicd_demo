@@ -1,0 +1,75 @@
+# This workflow will train the model, test it, build a .whl file, dockerize the api, push the docker image to DockerHub, and start a new container on specified machine.
+
+name: CICD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]           # this event is used to trigger the workflow when changes are pushed to repository's main branch
+  workflow_dispatch:               # this event allows you to manually trigger a workflow from the GitHub interface
+
+jobs:
+  train:                           # job name -> 'train'
+    runs-on: ubuntu-latest         # type of machine (GitHub Runner) where this job will be executed
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3          # github action to checkout the current code in repo
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3      # github actions to set up python 3.10
+      with:
+        python-version: '3.10'
+    - name: Install dependencies                            # one of the step under 'train' job
+      run: pip install -r requirements/requirements.txt     # command(s) to execute under this step
+    - name: Train and save pipeline                      # another step
+      run: python titanic_model/train_pipeline.py        # command to execute under this step
+    - uses: actions/upload-artifact@v2              # github action to upload the artifact (to use them later in other jobs)
+      with:
+        name: my-trained-pipeline
+        path: titanic_model/trained_models/*.pkl    # saving the trained model as an artifact
+        retention-days: 1                           # to keep this artifact in storage for 1 day
+
+  test:                           # another job -> 'test'
+    needs: train                  # run the 'test' job only after the 'train' job is done
+    runs-on: ubuntu-latest        # type of machine (GitHub Runner) where this job will be executed
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - uses: actions/download-artifact@v2         # github action to download the artifact(created during the execution of previous jobs)
+      with:
+        name: my-trained-pipeline
+        path: titanic_model/trained_models
+    - name: Install test dependencies
+      run: pip install -r requirements/test_requirements.txt
+    - name: Test with pytest
+      run: pytest
+
+  build:                           # another job -> 'test'
+    needs: [train, test]           # run the 'build' job only after the 'train' & 'test' job is done
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - uses: actions/download-artifact@v2
+      with:
+        name: my-trained-pipeline
+        path: titanic_model/trained_models
+    - name: Install dependencies
+      run: pip install --upgrade build
+    - name: Build package
+      run: python -m build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: my-build-package
+        path: dist/*.whl
+        retention-days: 1
+
