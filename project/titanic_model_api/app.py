@@ -55,7 +55,7 @@ def get_output_label(in_Pid, in_Pclass, in_Pname, in_sex, in_age, in_sibsp, in_p
                              "Fare": [float(in_fare)]})
     
     result = make_prediction(input_data=input_df.replace({np.nan: None}))["predictions"]
-    label = "Survive" if result[0]==1 else "Not Survive"
+    label = "Likely to Survive" if result[0]==1 else "Less likely to Survive"
     return label
 
 
@@ -63,9 +63,9 @@ def get_output_label(in_Pid, in_Pclass, in_Pname, in_sex, in_age, in_sibsp, in_p
 iface = gradio.Interface(fn = get_output_label,
                          inputs = [in_Pid, in_Pclass, in_Pname, in_sex, in_age, in_sibsp, in_parch, in_ticket, in_cabin, in_embarked, in_fare],
                          outputs = [out_label],
-                         title="Titanic Survival Prediction API 1.0  ⛴",
+                         title="Titanic Survival Prediction API ⛴",
                          description="Predictive model that answers the question: “What sort of people were more likely to survive?”",
-                         allow_flagging='never'
+                         flagging_mode='never'
                          )
 
 # Mount gradio interface object on FastAPI app at endpoint = '/'
