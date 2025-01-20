@@ -19,13 +19,13 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install dependencies                            # one of the step under 'train' job
-      run: pip install -r requirements/requirements.txt     # command(s) to execute under this step
+      run: pip install -r project/requirements/requirements.txt     # command(s) to execute under this step
     - name: Train and save pipeline                      # another step
-      run: python titanic_model/train_pipeline.py        # command to execute under this step
+      run: python project/titanic_model/train_pipeline.py        # command to execute under this step
     - uses: actions/upload-artifact@v3              # github action to upload the artifact (to use them later in other jobs)
       with:
         name: my-trained-pipeline
-        path: titanic_model/trained_models/*.pkl    # saving the trained model as an artifact
+        path: project/titanic_model/trained_models/*.pkl    # saving the trained model as an artifact
         retention-days: 1                           # to keep this artifact in storage for 1 day
 
   test:                           # another job -> 'test'
@@ -42,9 +42,9 @@ jobs:
     - uses: actions/download-artifact@v3         # github action to download the artifact(created during the execution of previous jobs)
       with:
         name: my-trained-pipeline
-        path: titanic_model/trained_models
+        path: project/titanic_model/trained_models
     - name: Install test dependencies
-      run: pip install -r requirements/test_requirements.txt
+      run: pip install -r project/requirements/test_requirements.txt
     - name: Test with pytest
       run: pytest
 
@@ -62,11 +62,13 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: my-trained-pipeline
-        path: titanic_model/trained_models
+        path: project/titanic_model/trained_models
     - name: Install dependencies
       run: pip install --upgrade build
     - name: Build package
-      run: python -m build
+      run: |
+        cd project
+        python -m build
     - uses: actions/upload-artifact@v3
       with:
         name: my-build-package
